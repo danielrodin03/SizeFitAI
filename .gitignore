@@ -19,4 +19,5 @@ htmlcov/
 .vscode/
 *.db
 sizefitai.db
-data/
+# Root-only: e.g. Render disk mount — do NOT use plain "data/" (it ignores app/data/)
+/data/
