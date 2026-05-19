@@ -1,0 +1,22 @@
+# Optional — requires Docker. For local dev without Docker, use:
+#   uvicorn app.main:app --reload
+#   python -m scripts.seed
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sizefitai-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-8000}:8000"
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:///./data/sizefitai.db
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app/app
+      - ./data:/app/data

@@ -1,0 +1,53 @@
+body {
+  margin: 0;
+  width: 280px;
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  background: #0a0a0a;
+  color: #fff;
+}
+
+.popup {
+  padding: 20px;
+}
+
+.logo {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.logo span {
+  font-weight: 300;
+}
+
+.status {
+  font-size: 0.8rem;
+  color: #aaa;
+  margin: 12px 0 16px;
+  line-height: 1.4;
+}
+
+.btn {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: none;
+  background: #fff;
+  color: #0a0a0a;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #444;
+}
+
+.btn:hover {
+  opacity: 0.9;
+}

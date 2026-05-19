@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SizeFit AI — Profile</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="header">
+        <div class="logo">SizeFit<span>AI</span></div>
+        <p class="tagline">Your precision fit profile for AI-powered sizing</p>
+      </header>
+
+      <main class="card">
+        <div class="card__head">
+          <h1>Fit Profile Setup</h1>
+          <p class="subtitle">
+            The more detail you provide, the more accurate your size
+            recommendations will be across every retailer.
+          </p>
+        </div>
+
+        <form id="profile-form" novalidate>
+          <section class="form-section">
+            <h2 class="section-title">Basics</h2>
+            <div class="field">
+              <label for="name">Full name</label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                required
+                placeholder="e.g. Alex Morgan"
+                autocomplete="name"
+              />
+            </div>
+            <div class="row">
+              <div class="field">
+                <label for="height_cm">Height (cm)</label>
+                <input
+                  id="height_cm"
+                  name="height_cm"
+                  type="number"
+                  min="100"
+                  max="250"
+                  step="0.1"
+                  required
+                  placeholder="178"
+                />
+              </div>
+              <div class="field">
+                <label for="weight_kg">Weight (kg)</label>
+                <input
+                  id="weight_kg"
+                  name="weight_kg"
+                  type="number"
+                  min="30"
+                  max="300"
+                  step="0.1"
+                  required
+                  placeholder="75"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h2 class="section-title">Typical sizes by brand</h2>
+            <p class="section-hint">
+              Select the size you most often wear at each retailer.
+            </p>
+            <div class="brand-grid">
+              <div class="field">
+                <label for="zara_size">Zara</label>
+                <select id="zara_size" name="zara_size" required>
+                  <option value="" disabled selected>Size</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="hm_size">H&amp;M</label>
+                <select id="hm_size" name="hm_size" required>
+                  <option value="" disabled selected>Size</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="asos_size">ASOS</label>
+                <select id="asos_size" name="asos_size" required>
+                  <option value="" disabled selected>Size</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="nike_size">Nike</label>
+                <select id="nike_size" name="nike_size" required>
+                  <option value="" disabled selected>Size</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section class="form-section">
+            <h2 class="section-title">Category fit preferences</h2>
+            <fieldset class="field chip-field">
+              <legend>Tops &amp; shirts</legend>
+              <div class="chip-group">
+                <label class="chip"
+                  ><input type="radio" name="tops_fit" value="tight" required /><span
+                    >Tight</span
+                  ></label
+                >
+                <label class="chip"
+                  ><input type="radio" name="tops_fit" value="regular" checked /><span
+                    >Regular</span
+                  ></label
+                >
+                <label class="chip"
+                  ><input type="radio" name="tops_fit" value="oversized" /><span
+                    >Oversized</span
+                  ></label
+                >
+              </div>
+            </fieldset>
+            <fieldset class="field chip-field">
+              <legend>Bottoms &amp; pants</legend>
+              <div class="chip-group">
+                <label class="chip"
+                  ><input type="radio" name="bottoms_fit" value="slim" required /><span
+                    >Slim</span
+                  ></label
+                >
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="bottoms_fit"
+                    value="straight"
+                    checked
+                  /><span>Straight</span></label
+                >
+                <label class="chip"
+                  ><input type="radio" name="bottoms_fit" value="loose" /><span
+                    >Loose</span
+                  ></label
+                >
+              </div>
+            </fieldset>
+            <fieldset class="field chip-field">
+              <legend>Outerwear &amp; jackets</legend>
+              <div class="chip-group">
+                <label class="chip"
+                  ><input type="radio" name="outerwear_fit" value="snug" required /><span
+                    >Snug</span
+                  ></label
+                >
+                <label class="chip"
+                  ><input
+                    type="radio"
+                    name="outerwear_fit"
+                    value="regular"
+                    checked
+                  /><span>Regular</span></label
+                >
+                <label class="chip"
+                  ><input type="radio" name="outerwear_fit" value="layering" /><span
+                    >Layering / Roomy</span
+                  ></label
+                >
+              </div>
+            </fieldset>
+          </section>
+
+          <section class="form-section">
+            <h2 class="section-title">Body shape profile</h2>
+            <fieldset class="field chip-field">
+              <legend class="sr-only">Body shape</legend>
+              <div class="chip-group chip-group--stack">
+                <label class="chip chip--wide"
+                  ><input
+                    type="radio"
+                    name="body_shape"
+                    value="broad_shoulders"
+                    required
+                  /><span>Broad shoulders</span></label
+                >
+                <label class="chip chip--wide"
+                  ><input type="radio" name="body_shape" value="long_torso" /><span
+                    >Long torso</span
+                  ></label
+                >
+                <label class="chip chip--wide"
+                  ><input type="radio" name="body_shape" value="standard" checked /><span
+                    >Standard build</span
+                  ></label
+                >
+              </div>
+            </fieldset>
+          </section>
+
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+
+          <button type="submit" class="btn-primary" id="submit-btn">
+            Save fit profile
+          </button>
+        </form>
+      </main>
+
+      <footer class="footer">
+        <p>API · <code id="api-url"></code></p>
+      </footer>
+    </div>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
