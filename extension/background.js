@@ -82,7 +82,7 @@ async function getProductRecommendation(productInfo) {
     return {
       ok: false,
       error: "PROFILE_REQUIRED",
-      message: "Please set up your fit profile before getting a recommendation.",
+      message: "Set up your fit profile to get a size recommendation.",
     };
   }
 

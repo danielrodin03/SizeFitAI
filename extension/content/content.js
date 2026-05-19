@@ -75,10 +75,10 @@
     root.id = "sizefitai-root";
     root.innerHTML = `
       <aside class="sizefitai-sidebar" id="sizefitai-sidebar">
-        <button class="sizefitai-toggle" id="sizefitai-toggle" aria-label="Toggle SizeFitAI">SizeFit</button>
+        <button class="sizefitai-toggle" id="sizefitai-toggle" aria-label="Toggle FitSize AI">FitSize</button>
         <div class="sizefitai-inner">
           <header class="sizefitai-header">
-            <div class="sizefitai-logo">SizeFit<span>AI</span></div>
+            <div class="sizefitai-logo">FitSize<span>AI</span></div>
             <span class="sizefitai-badge" id="sizefitai-mode-badge">Beta</span>
           </header>
           <div class="sizefitai-product" id="sizefitai-product"></div>
@@ -124,7 +124,7 @@
       <p>${escapeHtml(message)}</p>
       ${
         showProfileCta
-          ? '<button class="sizefitai-cta" id="sizefitai-open-profile">Set up fit profile</button>'
+          ? '<button class="sizefitai-cta" id="sizefitai-open-profile">Set up in 60 seconds →</button>'
           : ""
       }
     `;
