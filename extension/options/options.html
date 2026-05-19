@@ -30,13 +30,25 @@
           <section class="form-section">
             <div class="field">
               <label for="favorite_brand">Favorite brand</label>
-              <select id="favorite_brand" name="favorite_brand" required>
-                <option value="" disabled selected>Select brand</option>
-                <option value="zara">Zara</option>
-                <option value="hm">H&amp;M</option>
-                <option value="asos">ASOS</option>
-                <option value="nike">Nike</option>
-              </select>
+              <input
+                id="favorite_brand"
+                name="favorite_brand"
+                type="text"
+                required
+                placeholder="e.g. Calzedonia, Nike, Zara"
+                autocomplete="organization"
+                list="brand-suggestions"
+              />
+              <datalist id="brand-suggestions">
+                <option value="Zara"></option>
+                <option value="H&amp;M"></option>
+                <option value="ASOS"></option>
+                <option value="Nike"></option>
+                <option value="Calzedonia"></option>
+                <option value="Mango"></option>
+                <option value="Uniqlo"></option>
+              </datalist>
+              <p class="field-hint">Any brand worldwide — type the name you shop most.</p>
             </div>
 
             <div class="field">

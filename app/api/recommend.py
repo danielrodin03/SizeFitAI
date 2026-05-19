@@ -52,16 +52,20 @@ async def recommend_size(
             detail=f"Product {body.product_id} not found",
         )
 
-    if not ctx.product.reviews and settings.demo_mode:
+    has_page = bool(ctx.product.page_context and ctx.product.page_context.strip())
+    has_reviews = bool(ctx.product.reviews)
+
+    if not has_reviews and not has_page and settings.demo_mode:
         await ensure_demo_reviews(db, body.product_id)
         ctx = await load_recommendation_context(db, body.user_id, body.product_id)
+        has_reviews = bool(ctx.product.reviews)
 
-    if not ctx.product.reviews:
+    if not has_reviews and not has_page:
         if settings.demo_mode:
             return MOCK_RECOMMENDATION
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="No reviews available for this product",
+            detail="No fit data available for this product",
         )
 
     service = _get_ai_service()

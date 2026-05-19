@@ -53,19 +53,19 @@ BODY_SHAPE_LABELS: dict[BodyShape, str] = {
 }
 
 SYSTEM_PROMPT = """\
-You are an expert fashion sizing consultant for mainstream retailers (Zara, H&M, ASOS, Nike).
-Analyze customer reviews for a specific product and recommend the best size for this user.
+You are an expert fashion sizing consultant for ANY clothing brand and e-commerce site worldwide.
+Analyze fit information and recommend the best size for this user.
 
 Rules:
-1. Weight review fit patterns (too small / too big / true to size) and purchased sizes heavily.
-2. Cross-reference the user's brand-specific size benchmarks (e.g. "usually L in Zara").
-3. Apply category-specific fit preferences (tops, bottoms, outerwear) — match the product type.
-4. Factor in body shape (broad shoulders, long torso, etc.) when reviews mention shoulder/chest/torso fit.
-5. If the item runs small, recommend sizing up; if large, sizing down.
-6. confidence_score: 1–100 based on review volume, pattern consistency, and profile relevance.
-7. reasoning: 2–4 concise sentences in English. Cite percentages or patterns when possible.
+1. Use review patterns OR raw page text (size charts, fit notes, "runs small", model info).
+2. Cross-reference the user's benchmark brand and usual size.
+3. Apply their fit preference (relaxed / fitted / oversized).
+4. Parse sizing dynamically from unstructured page text when reviews are absent.
+5. Never refuse because the brand is unknown — infer from available signals.
+6. confidence_score: 1–100 based on evidence quality.
+7. reasoning: 2–4 concise sentences in English.
 
-Return JSON only, no extra text:
+Return JSON only:
 {
   "recommended_size": "L",
   "confidence_score": 85,
@@ -75,28 +75,18 @@ Return JSON only, no extra text:
 
 USER_PROMPT_TEMPLATE = """\
 ## User profile
-- Name: {name}
-- Height: {height_cm} cm | Weight: {weight_kg} kg
-- Body shape: {body_shape}
-
-## Brand size benchmarks
-- Zara: {zara_size}
-- H&M: {hm_size}
-- ASOS: {asos_size}
-- Nike: {nike_size}
-
-## Category fit preferences
-- Tops / shirts: {tops_fit}
-- Bottoms / pants: {bottoms_fit}
-- Outerwear / jackets: {outerwear_fit}
+- Fit preference (tops): {tops_fit}
+- Fit preference (bottoms): {bottoms_fit}
+- Fit preference (outerwear): {outerwear_fit}
+- Primary benchmark: usually size {benchmark_size} at {benchmark_brand}
 
 ## Product
 - Brand: {brand}
 - Name: {product_name}
-- Inferred category: {product_category}
-- External ID: {external_product_id}
+- Category: {product_category}
+- URL context: {external_product_id}
 
-## Reviews ({review_count} total)
+## Customer reviews ({review_count} total)
 {reviews_block}
 
 ## Review statistics
@@ -104,8 +94,29 @@ USER_PROMPT_TEMPLATE = """\
 - Too big: {too_big_count} ({too_big_pct}%)
 - True to size: {fits_count} ({fits_pct}%)
 
-Recommend the optimal size for this user. Prioritize the {brand} size benchmark and \
-{category_fit_label} preference for this product category.
+Recommend the optimal size. Prioritize benchmark {benchmark_brand} size {benchmark_size} and {category_fit_label} fit.
+"""
+
+UNIVERSAL_PAGE_PROMPT_TEMPLATE = """\
+## User profile
+- Fit preference (tops): {tops_fit}
+- Fit preference (bottoms): {bottoms_fit}
+- Fit preference (outerwear): {outerwear_fit}
+- Primary benchmark: usually size {benchmark_size} at {benchmark_brand}
+
+## Product
+- Brand: {brand}
+- Name: {product_name}
+- Category: {product_category}
+- Page URL id: {external_product_id}
+
+## Raw page text (extract sizing / fit / reviews from this)
+{page_context}
+
+Parse size charts, fit guidance, model measurements, "runs small/large", available sizes, \
+and customer comments in the text above. Recommend the best size for this user.
+
+Apply benchmark {benchmark_brand} size {benchmark_size} and {category_fit_label} preference.
 """
 
 
@@ -134,17 +145,10 @@ def category_fit_label(user: UserProfile, category: str) -> str:
     return TOPS_FIT_LABELS.get(user.tops_fit, "regular")
 
 
-def brand_benchmark_size(user: UserProfile, brand: str) -> str:
-    brand_key = brand.strip().lower()
-    if "zara" in brand_key:
-        return user.zara_size
-    if "h&m" in brand_key or "hm" in brand_key:
-        return user.hm_size
-    if "asos" in brand_key:
-        return user.asos_size
-    if "nike" in brand_key:
-        return user.nike_size
-    return user.zara_size
+def user_benchmark(user: UserProfile) -> tuple[str, str]:
+    brand = (user.benchmark_brand or "").strip() or "preferred brand"
+    size = (user.benchmark_size or "").strip() or user.zara_size or "M"
+    return brand, size
 
 
 async def load_recommendation_context(
@@ -183,7 +187,7 @@ class RecommendationService:
 
     def _build_reviews_block(self, ctx: RecommendationContext) -> str:
         if not ctx.product.reviews:
-            return "(no reviews available)"
+            return "(no structured reviews — see page text if provided)"
 
         lines: list[str] = []
         for i, review in enumerate(ctx.product.reviews, start=1):
@@ -224,23 +228,33 @@ class RecommendationService:
         }
 
     def build_user_prompt(self, ctx: RecommendationContext) -> str:
-        stats = self._fit_stats(ctx)
         user = ctx.user
         product = ctx.product
         category = infer_product_category(product)
+        benchmark_brand, benchmark_size = user_benchmark(user)
 
+        if product.page_context and not product.reviews:
+            return UNIVERSAL_PAGE_PROMPT_TEMPLATE.format(
+                tops_fit=TOPS_FIT_LABELS.get(user.tops_fit, "regular"),
+                bottoms_fit=BOTTOMS_FIT_LABELS.get(user.bottoms_fit, "straight"),
+                outerwear_fit=OUTERWEAR_FIT_LABELS.get(user.outerwear_fit, "regular"),
+                benchmark_brand=benchmark_brand,
+                benchmark_size=benchmark_size,
+                brand=product.brand,
+                product_name=product.name,
+                product_category=category,
+                external_product_id=product.external_product_id,
+                category_fit_label=category_fit_label(user, category),
+                page_context=product.page_context[:8000],
+            )
+
+        stats = self._fit_stats(ctx)
         return USER_PROMPT_TEMPLATE.format(
-            name=user.name,
-            height_cm=user.height_cm,
-            weight_kg=user.weight_kg,
-            body_shape=BODY_SHAPE_LABELS.get(user.body_shape, "standard"),
-            zara_size=user.zara_size,
-            hm_size=user.hm_size,
-            asos_size=user.asos_size,
-            nike_size=user.nike_size,
             tops_fit=TOPS_FIT_LABELS.get(user.tops_fit, "regular"),
             bottoms_fit=BOTTOMS_FIT_LABELS.get(user.bottoms_fit, "straight"),
             outerwear_fit=OUTERWEAR_FIT_LABELS.get(user.outerwear_fit, "regular"),
+            benchmark_brand=benchmark_brand,
+            benchmark_size=benchmark_size,
             brand=product.brand,
             product_name=product.name,
             product_category=category,

@@ -12,9 +12,8 @@ const CLIENT_MOCK_RECOMMENDATION = {
   confidence_score: 85,
   is_demo: true,
   reasoning:
-    "Roughly 80% of reviews report this item runs small or snug, especially " +
-    "in the shoulders and chest. Based on your Zara benchmark size and " +
-    "outerwear fit preference, we recommend sizing up to L for a comfortable fit.",
+    "Based on sizing information from this page and your fit profile, we recommend " +
+    "this size for the best match. Complete setup for higher confidence on any store.",
 };
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -99,7 +98,10 @@ async function getProductRecommendation(productInfo) {
 
     return {
       ok: true,
-      product: resolved,
+      product: {
+        ...resolved,
+        parsed_from_page: resolved.parsed_from_page || resolved.has_page_context,
+      },
       recommendation,
     };
   } catch (err) {

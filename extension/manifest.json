@@ -1,14 +1,13 @@
 {
   "manifest_version": 3,
   "name": "FitSize AI",
-  "version": "1.2.0",
-  "description": "AI-powered size recommendations for fashion e-commerce",
+  "version": "1.3.0",
+  "description": "AI-powered size recommendations on any fashion website",
   "permissions": ["storage", "activeTab", "scripting"],
   "host_permissions": [
     "https://sizefitai.onrender.com/*",
     "https://*.onrender.com/*",
-    "https://www.zara.com/*",
-    "https://*.zara.com/*"
+    "<all_urls>"
   ],
   "background": {
     "service_worker": "background.js",
@@ -31,9 +30,11 @@
   },
   "content_scripts": [
     {
-      "matches": [
-        "https://www.zara.com/*",
-        "https://*.zara.com/*"
+      "matches": ["<all_urls>"],
+      "exclude_matches": [
+        "*://chrome.google.com/*",
+        "*://chromewebstore.google.com/*",
+        "*://chrome-extension/*"
       ],
       "js": ["content/content.js"],
       "css": ["content/content.css"],
@@ -43,7 +44,7 @@
   "web_accessible_resources": [
     {
       "resources": ["assets/*"],
-      "matches": ["https://www.zara.com/*", "https://*.zara.com/*"]
+      "matches": ["<all_urls>"]
     }
   ]
 }

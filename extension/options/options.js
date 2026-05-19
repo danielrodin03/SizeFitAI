@@ -36,7 +36,7 @@ function setStatus(message, type = "") {
 function getSimpleFormData() {
   const data = new FormData(form);
   return {
-    favorite_brand: data.get("favorite_brand"),
+    favorite_brand: data.get("favorite_brand").trim(),
     brand_size: data.get("brand_size"),
     fit_preference: data.get("fit_preference"),
   };
@@ -47,19 +47,17 @@ function toApiPayload(simple) {
   const brand = simple.favorite_brand;
   const fit = FIT_MAP[simple.fit_preference] || FIT_MAP.fitted;
 
-  const sizes = {
-    zara_size: brand === "zara" ? size : "M",
-    hm_size: brand === "hm" ? size : "M",
-    asos_size: brand === "asos" ? size : "M",
-    nike_size: brand === "nike" ? size : "M",
-  };
-
   return {
     name: "FitSize User",
     height_cm: 170,
     weight_kg: 70,
     body_shape: "standard",
-    ...sizes,
+    benchmark_brand: brand,
+    benchmark_size: size,
+    zara_size: size,
+    hm_size: size,
+    asos_size: size,
+    nike_size: size,
     ...fit,
   };
 }
@@ -70,24 +68,10 @@ function inferFitPreference(user) {
   return "relaxed";
 }
 
-function inferFavoriteBrand(user) {
-  const brands = [
-    { key: "zara", size: user.zara_size },
-    { key: "hm", size: user.hm_size },
-    { key: "asos", size: user.asos_size },
-    { key: "nike", size: user.nike_size },
-  ];
-  const nonDefault = brands.find((b) => b.size && b.size !== "M");
-  return nonDefault?.key || "zara";
-}
-
 function fillForm(simple, user = null) {
-  const brand = simple?.favorite_brand || (user ? inferFavoriteBrand(user) : "zara");
+  const brand = simple?.favorite_brand || user?.benchmark_brand || "";
   const size =
-    simple?.brand_size ||
-    user?.[`${brand}_size`] ||
-    user?.zara_size ||
-    "M";
+    simple?.brand_size || user?.benchmark_size || user?.zara_size || "M";
   const fitPref =
     simple?.fit_preference || (user ? inferFitPreference(user) : "fitted");
 
@@ -121,6 +105,9 @@ form.addEventListener("submit", async (event) => {
 
   try {
     const simple = getSimpleFormData();
+    if (!simple.favorite_brand) {
+      throw new Error("Please enter your favorite brand");
+    }
     const payload = toApiPayload(simple);
 
     const response = await chrome.runtime.sendMessage({
@@ -133,7 +120,7 @@ form.addEventListener("submit", async (event) => {
     }
 
     await chrome.storage.sync.set({ [STORAGE_SIMPLE]: simple });
-    setStatus("You're all set — head to a product page!", "success");
+    setStatus("You're all set — shop on any fashion site!", "success");
   } catch (err) {
     setStatus(err.message || "Error saving profile", "error");
   } finally {

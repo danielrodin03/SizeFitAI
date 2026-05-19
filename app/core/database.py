@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import DeclarativeBase
 
 from app.core.config import settings
-from app.core.migrate import migrate_user_profiles
+from app.core.migrate import migrate_user_profiles_legacy
 
 
 class Base(DeclarativeBase):
@@ -39,4 +39,4 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        await conn.run_sync(migrate_user_profiles)
+        await conn.run_sync(migrate_user_profiles_legacy)

@@ -118,9 +118,30 @@ select {
   background-position: right 14px center;
 }
 
+input[type="text"]:focus,
 select:focus {
   outline: none;
   border-color: var(--gold);
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  color: var(--text);
+}
+
+.field-hint {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.4;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
 }
 
 .chip-group {

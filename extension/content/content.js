@@ -1,70 +1,73 @@
 (function () {
+  const PAGE_TEXT_MAX = 8000;
+  const BLOCKED_PREFIXES = [
+    "chrome://",
+    "chrome-extension://",
+    "about:",
+    "edge://",
+    "moz-extension://",
+  ];
+
   const CLIENT_MOCK = {
     recommended_size: "L",
-    confidence_score: 85,
+    confidence_score: 75,
     is_demo: true,
     reasoning:
-      "Roughly 80% of reviews report this item runs small or snug, especially " +
-      "in the shoulders and chest. Based on your Zara benchmark size and fit " +
-      "preferences, we recommend sizing up to L for a more comfortable fit.",
+      "Based on sizing cues found on this page and your fit profile, we recommend " +
+      "this size for the best match. Add more detail on the product page for higher confidence.",
   };
 
-  function isZaraProductPage() {
-    if (!/zara\.com/i.test(window.location.hostname)) return false;
-
-    const path = window.location.pathname;
-    if (/-p\d{4,}/i.test(path)) return true;
-    if (/\/product\//i.test(path)) return true;
-
-    const productName = document.querySelector(
-      '[data-qa-qualifier="product-name"], [data-qa="product-name"], h1'
-    );
-    const addToCart = document.querySelector(
-      '[data-qa-qualifier="add-to-cart"], [data-qa="add-to-cart"], button[class*="add-to-cart"]'
-    );
-
-    return Boolean(productName && addToCart);
+  function isSupportedPage() {
+    const url = window.location.href;
+    if (BLOCKED_PREFIXES.some((p) => url.startsWith(p))) return false;
+    return /^https?:\/\//i.test(url);
   }
 
-  function extractProductId() {
-    const match = window.location.pathname.match(/-p(\d{4,})/i);
-    if (match) return `zara-${match[1]}`;
-
-    const canonical = document.querySelector('link[rel="canonical"]');
-    if (canonical?.href) {
-      const m = canonical.href.match(/-p(\d{4,})/i);
-      if (m) return `zara-${m[1]}`;
-    }
-
-    const meta = document.querySelector('meta[property="og:url"]');
-    if (meta?.content) {
-      const m = meta.content.match(/-p(\d{4,})/i);
-      if (m) return `zara-${m[1]}`;
-    }
-
-    return `zara-${window.location.pathname.replace(/\//g, "-").slice(0, 80)}`;
+  function extractPageText() {
+    const raw = document.body?.innerText || "";
+    const normalized = raw.replace(/\s+/g, " ").trim();
+    return normalized.slice(0, PAGE_TEXT_MAX);
   }
 
-  function extractProductName() {
-    const selectors = [
-      '[data-qa-qualifier="product-name"]',
-      '[data-qa="product-name"]',
-      "h1.product-detail-info__header-name",
-      "h1",
-    ];
-    for (const sel of selectors) {
-      const el = document.querySelector(sel);
-      if (el?.textContent?.trim()) return el.textContent.trim();
+  function hashUrl(url) {
+    const base = url.split("?")[0].split("#")[0];
+    let hash = 0;
+    for (let i = 0; i < base.length; i++) {
+      hash = (hash << 5) - hash + base.charCodeAt(i);
+      hash |= 0;
     }
-    return document.title.split("|")[0]?.trim() || "Zara Product";
+    return `url-${Math.abs(hash).toString(36)}`;
   }
 
-  function buildProductPayload() {
+  function titleToProductName() {
+    const title = document.title || "";
+    const parts = title.split(/[|\-–—]/).map((s) => s.trim());
+    const name = parts[0] || title;
+    return name.slice(0, 512) || "Product";
+  }
+
+  function hostnameToBrandHint() {
+    try {
+      const host = window.location.hostname.replace(/^www\./, "");
+      const segment = host.split(".")[0];
+      if (!segment || segment.length < 2) return "";
+      return segment.charAt(0).toUpperCase() + segment.slice(1);
+    } catch {
+      return "";
+    }
+  }
+
+  async function buildProductPayload() {
+    const link = window.location.href.split("?")[0].split("#")[0];
+    const pageBrand = hostnameToBrandHint();
+    const brand = pageBrand || "Fashion";
+
     return {
-      external_product_id: extractProductId(),
-      brand: "Zara",
-      name: extractProductName(),
-      link: window.location.href.split("?")[0],
+      external_product_id: hashUrl(link),
+      brand,
+      name: titleToProductName(),
+      link,
+      page_text: extractPageText(),
     };
   }
 
@@ -85,7 +88,7 @@
           <div id="sizefitai-content">
             <div class="sizefitai-loader" id="sizefitai-loader">
               <div class="sizefitai-spinner"></div>
-              <p>Analyzing reviews &amp; calculating your fit...</p>
+              <p>Reading this page &amp; analyzing fit...</p>
             </div>
             <div id="sizefitai-result" class="sizefitai-result sizefitai-hidden"></div>
             <div id="sizefitai-error" class="sizefitai-error sizefitai-hidden"></div>
@@ -96,10 +99,8 @@
 
     document.body.appendChild(root);
 
-    document.getElementById("sizefitai-toggle").addEventListener("click", () => {
-      document
-        .getElementById("sizefitai-sidebar")
-        .classList.toggle("collapsed");
+    document.getElementById("sizefitai-toggle")?.addEventListener("click", () => {
+      document.getElementById("sizefitai-sidebar")?.classList.toggle("collapsed");
     });
   }
 
@@ -148,13 +149,15 @@
     error?.classList.add("sizefitai-hidden");
     result?.classList.remove("sizefitai-hidden");
 
-    if (badge && recommendation?.is_demo) {
-      badge.textContent = "Demo";
+    if (badge) {
+      if (recommendation?.is_demo) badge.textContent = "Demo";
+      else if (product?.parsed_from_page) badge.textContent = "Live";
+      else badge.textContent = "Beta";
     }
 
     const score = Math.min(
       100,
-      Math.max(1, recommendation.confidence_score || 85)
+      Math.max(1, recommendation.confidence_score || 75)
     );
 
     result.innerHTML = `
@@ -185,8 +188,8 @@
     const productEl = document.getElementById("sizefitai-product");
     if (productEl && product) {
       productEl.innerHTML = `
-        ${escapeHtml(product.brand || "Zara")}
-        <strong>${escapeHtml(product.name || extractProductName())}</strong>
+        ${escapeHtml(product.brand || "")}
+        <strong>${escapeHtml(product.name || titleToProductName())}</strong>
       `;
     }
   }
@@ -200,7 +203,7 @@
   async function fetchRecommendation() {
     showLoader();
 
-    const productInfo = buildProductPayload();
+    const productInfo = await buildProductPayload();
     const productEl = document.getElementById("sizefitai-product");
     if (productEl) {
       productEl.innerHTML = `
@@ -231,20 +234,20 @@
       }
 
       showResult({
-        product: productInfo,
+        product: { ...productInfo, parsed_from_page: true },
         recommendation: CLIENT_MOCK,
       });
     }
   }
 
   function init() {
-    if (!isZaraProductPage()) return;
+    if (!isSupportedPage()) return;
     ensureSidebar();
     fetchRecommendation();
   }
 
   function handleRefresh() {
-    if (!/zara\.com/i.test(window.location.hostname)) return;
+    if (!isSupportedPage()) return;
     ensureSidebar();
     fetchRecommendation();
   }
